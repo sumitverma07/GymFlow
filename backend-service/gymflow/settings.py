@@ -9,21 +9,28 @@ https://docs.djangoproject.com/en/6.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.1/ref/settings/
 """
-
+import os
 from pathlib import Path
+import environ
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+# Read .env file
+environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
+
+env =environ.Env()
 
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-m9$-n3800x&s%@ib_%rj*yn#q9!(-g6k650^+6-v+j4eq^qx+2"
+SECRET_KEY = env('SECRET_KEY',default="django-insecure-m9$-n3800x&s%@ib_%rj*yn#q9!(-g6k650^+6-v+j4eq^qx+2")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
+
+NODB= env('NODB')
 
 ALLOWED_HOSTS = []
 
@@ -31,6 +38,10 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    "categories",
+    'exercise_images',
+    "exercises",
+    "profiles",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -68,16 +79,23 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "gymflow.wsgi.application"
 
+FUNCTION_APP_PATH = 'api/v1/'
+
 
 # Database
 # https://docs.djangoproject.com/en/6.1/ref/settings/#databases
-
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+if NODB == True:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
     }
-}
+
+else:
+    DATABASES = {
+        'default': env.db('DATABASE_URL')
+    }
 
 
 # Password validation
