@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.1/ref/settings/
 """
 import os
+from datetime import timedelta
 from pathlib import Path
 import environ
 
@@ -42,6 +43,7 @@ INSTALLED_APPS = [
     'exercise_images',
     "exercises",
     "profiles",
+    "rest_framework",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -49,6 +51,17 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
 ]
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=300),
+    'REFRESH_TOKEN_LIFETIME': timedelta(hours=8),
+}
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 10,  # items per page
+}
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
