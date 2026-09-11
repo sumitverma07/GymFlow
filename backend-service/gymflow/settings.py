@@ -9,6 +9,7 @@ https://docs.djangoproject.com/en/6.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.1/ref/settings/
 """
+
 import os
 from datetime import timedelta
 from pathlib import Path
@@ -17,21 +18,24 @@ import environ
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 # Read .env file
-environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
+environ.Env.read_env(os.path.join(BASE_DIR, ".env"))
 
-env =environ.Env()
+env = environ.Env()
 
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = env('SECRET_KEY',default="django-insecure-m9$-n3800x&s%@ib_%rj*yn#q9!(-g6k650^+6-v+j4eq^qx+2")
+SECRET_KEY = env(
+    "SECRET_KEY",
+    default="django-insecure-m9$-n3800x&s%@ib_%rj*yn#q9!(-g6k650^+6-v+j4eq^qx+2",
+)
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-NODB= env('NODB')
+NODB = env("NODB")
 
 ALLOWED_HOSTS = []
 
@@ -40,7 +44,7 @@ ALLOWED_HOSTS = []
 
 INSTALLED_APPS = [
     "categories",
-    'exercise_images',
+    "exercise_images",
     "exercises",
     "profiles",
     "rest_framework",
@@ -52,15 +56,15 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
 ]
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=300),
-    'REFRESH_TOKEN_LIFETIME': timedelta(hours=8),
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=300),
+    "REFRESH_TOKEN_LIFETIME": timedelta(hours=8),
 }
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 10,  # items per page
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": 10,  # items per page
 }
 
 MIDDLEWARE = [
@@ -92,7 +96,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "gymflow.wsgi.application"
 
-FUNCTION_APP_PATH = 'api/v1/'
+FUNCTION_APP_PATH = "api/v1/"
 
 
 # Database
@@ -106,9 +110,7 @@ if NODB == True:
     }
 
 else:
-    DATABASES = {
-        'default': env.db('DATABASE_URL')
-    }
+    DATABASES = {"default": env.db("DATABASE_URL")}
 
 
 # Password validation
@@ -151,8 +153,17 @@ STATIC_URL = "static/"
 # Email
 # https://docs.djangoproject.com/en/6.1/topics/email/#topic-email-configuration
 
-MAILERS = {
-    "default": {
-        "BACKEND": "django.core.mail.backends.console.EmailBackend",
-    },
-}
+# MAILERS = {
+#     "default": {
+#         "BACKEND": "django.core.mail.backends.console.EmailBackend",
+#     },
+# }
+
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = "smtp-relay.brevo.com"  # e.g., 'email-smtp.us-east-1.amazonaws.com'
+EMAIL_PORT = 587  # Typically, 587 for TLS
+EMAIL_USE_TLS = True  # Use TLS for security
+EMAIL_USE_SSL = False
+EMAIL_HOST_USER = "b89890001@smtp-brevo.com"
+EMAIL_HOST_PASSWORD = env("SMTP_KEY")
+DEFAULT_FROM_EMAIL = "vermasumit5236@gmail.com"

@@ -18,6 +18,7 @@ from .serializers import (
     ExerciseSerializer,
     ExerciseBasicSerializer,
 )
+from gymflow.utils import send_verification_email
 
 
 class ExerciseFilter(FilterSet):
