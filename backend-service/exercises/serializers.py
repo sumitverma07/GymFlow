@@ -2,29 +2,44 @@ from rest_framework import serializers
 from categories.serializers import CategoryBasicSerializer
 from exercise_images.serializers import ExerciseImageBasicSerializer
 from .models import Exercise
+from set_trackings.serializers import SetTrackingBasicSerializer
 
 
 class ExerciseSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Exercise
-        fields = '__all__'
+        fields = "__all__"
 
-class ExerciseBasicSerializer(serializers.ModelSerializer):
-    category=CategoryBasicSerializer()
-    images=serializers.SerializerMethodField()
+
+class ExerciseSerializer1(serializers.ModelSerializer):
+
     class Meta:
         model = Exercise
-        fields = [
-            'id',
-            'name',
-            'body_part',
-            'primary_muscle',
-            'category',
-            'images'   
-        ]
-    
+        fields = ["id", "name"]
 
-    def get_images(self,obj):
-        images= obj.exercise_images_exercise.all()
+
+class ExerciseBasicSerializer(serializers.ModelSerializer):
+    category = CategoryBasicSerializer()
+    images = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Exercise
+        fields = ["id", "name", "body_part", "primary_muscle", "category", "images"]
+
+    def get_images(self, obj):
+        images = obj.exercise_images_exercise.all()
         return ExerciseImageBasicSerializer(images, many=True).data
+
+
+class ExeS(serializers.ModelSerializer):
+    sets = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Exercise
+        fields = ["id", "name", "sets"]
+
+    def get_sets(self, obj):
+        query_val = obj.set_tracking_exercise.all()
+        serializer = SetTrackingBasicSerializer(query_val, many=True)
+        return serializer.data

@@ -1,69 +1,58 @@
 from django.db.models.query import QuerySet
-from django.conf import settings
-from django.db import connection, reset_queries
 from django_filters.rest_framework import DjangoFilterBackend
 from django_filters import FilterSet, CharFilter
 
 from rest_framework import filters
 from rest_framework.response import Response
 from rest_framework.permissions import IsAdminUser, IsAuthenticated, AllowAny
+from rest_framework.views import APIView
 from rest_framework.generics import (
     ListCreateAPIView,
     RetrieveUpdateDestroyAPIView,
     ListAPIView,
 )
 
-from .models import Exercise
+from .models import SetTracking
 from .serializers import (
-    ExerciseSerializer,
-    ExerciseBasicSerializer,
+    SetTrackingSerializer,
+    SetTrackingBasicSerializer,
+    RecordSetSerializer,
 )
-from gymflow.utils import send_verification_email
 
 
-class ExerciseFilter(FilterSet):
-    name = CharFilter(lookup_expr="icontains")
-    muscle_group = CharFilter(lookup_expr="icontains")
-    instructions = CharFilter(lookup_expr="icontains")
+class SetTrackingFilter(FilterSet):
 
     class Meta:
-        model = Exercise
+        model = SetTracking
         fields = {
             "id": ["exact", "in"],
             "date_created": ["exact", "range"],
             "last_modified": ["exact", "range"],
-            "name": ["exact", "icontains", "istartswith", "iendswith"],
-            "category": ["exact", "in", "isnull"],
-            "body_part": ["exact", "icontains", "istartswith", "iendswith"],
-            "primary_muscle": ["exact", "icontains", "istartswith", "iendswith", "in"],
-            "instructions": ["exact", "icontains", "istartswith", "iendswith"],
-            "archive": [
-                "exact",
-                "icontains",
-                "istartswith",
-                "iendswith",
-                "in",
-                "isnull",
-            ],
+            "set_number": ["exact", "in", "gte", "lte"],
+            "reps": ["exact", "in", "gte", "lte"],
+            "weight": ["exact", "in", "gte", "lte"],
+            "performed_workout_id": ["exact", "in"],
+            "exercise_id": ["exact", "in"],
+            "archive": ["exact", "in", "isnull"],
         }
 
 
-class ExerciseCreate(ListCreateAPIView):
-    queryset = Exercise.objects.all()
-    serializer_class = ExerciseSerializer
+class SetTrackingCreate(ListCreateAPIView):
+    queryset = SetTracking.objects.all()
+    serializer_class = SetTrackingSerializer
     permission_classes = [IsAuthenticated]
     filter_backends = [
         filters.SearchFilter,
         filters.OrderingFilter,
         DjangoFilterBackend,
     ]
-    filterset_class = ExerciseFilter
+    filterset_class = SetTrackingFilter
 
     ordering_fields = "__all__"
     search_fields = [
-        "name",
-        "muscle_group",
-        "instructions",
+        "set_number",
+        "reps",
+        "weight",
     ]
 
     def perform_create(self, serializer):
@@ -77,10 +66,10 @@ class ExerciseCreate(ListCreateAPIView):
         return Response(serializer.data)
 
 
-class ExerciseList(ListAPIView):
-    serializer_class = ExerciseBasicSerializer
+class SetTrackingList(ListAPIView):
+    queryset = SetTracking.objects.all()
+    serializer_class = SetTrackingBasicSerializer
     permission_classes = [IsAuthenticated]
-    filterset_class = ExerciseFilter
     filter_backends = [
         filters.SearchFilter,
         filters.OrderingFilter,
@@ -89,21 +78,20 @@ class ExerciseList(ListAPIView):
     filter_fields = "__all__"
     ordering_fields = "__all__"
     search_fields = [
-        "phone_no",
-        "address",
+        "set_number",
+        "reps",
+        "weight",
     ]
 
-    def get_queryset(self):
-        queryset = Exercise.objects.filter(
-            body_part="Chest", primary_muscle="Chest"
-        ).order_by("id")
-        print("queryset is ", queryset)
-        return queryset
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
 
 
-class ExerciseRetrieveUpdateDestroyAPI(RetrieveUpdateDestroyAPIView):
-    queryset = Exercise.objects.all()
-    serializer_class = ExerciseSerializer
+class SetTrackingRetrieveUpdateDestroyAPI(RetrieveUpdateDestroyAPIView):
+    queryset = SetTracking.objects.all()
+    serializer_class = SetTrackingSerializer
     permission_classes = [IsAuthenticated]
 
     def perform_update(self, serializer):
@@ -115,3 +103,11 @@ class ExerciseRetrieveUpdateDestroyAPI(RetrieveUpdateDestroyAPIView):
         instance.updated_by = self.request.user
         instance.save()
         return instance
+
+
+class SetTrackingView(APIView):
+    def post(self, request):
+        serializer = RecordSetSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({"message": "Created Successfully"})
