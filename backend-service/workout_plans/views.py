@@ -1,6 +1,4 @@
 from django.db.models.query import QuerySet
-from django.conf import settings
-from django.db import connection, reset_queries
 from django_filters.rest_framework import DjangoFilterBackend
 from django_filters import FilterSet, CharFilter
 
@@ -13,30 +11,27 @@ from rest_framework.generics import (
     ListAPIView,
 )
 
-from .models import Exercise
+from .models import WorkoutPlan
 from .serializers import (
-    ExerciseSerializer,
-    ExerciseBasicSerializer,
+    WorkoutPlanSerializer,
+    WorkoutPlanBasicSerializer,
+    WorkoutExerciseSerializer,
 )
-from gymflow.utils import send_verification_email
+from rest_framework.views import APIView
 
 
-class ExerciseFilter(FilterSet):
+class WorkoutPlanFilter(FilterSet):
     name = CharFilter(lookup_expr="icontains")
-    muscle_group = CharFilter(lookup_expr="icontains")
-    instructions = CharFilter(lookup_expr="icontains")
 
     class Meta:
-        model = Exercise
+        model = WorkoutPlan
         fields = {
             "id": ["exact", "in"],
             "date_created": ["exact", "range"],
             "last_modified": ["exact", "range"],
             "name": ["exact", "icontains", "istartswith", "iendswith"],
-            "category": ["exact", "in", "isnull"],
-            "body_part": ["exact", "icontains", "istartswith", "iendswith"],
-            "primary_muscle": ["exact", "icontains", "istartswith", "iendswith", "in"],
-            "instructions": ["exact", "icontains", "istartswith", "iendswith"],
+            "day": ["exact", "in"],
+            "profile": ["exact", "in"],
             "archive": [
                 "exact",
                 "icontains",
@@ -48,27 +43,28 @@ class ExerciseFilter(FilterSet):
         }
 
 
-class ExerciseCreate(ListCreateAPIView):
-    queryset = Exercise.objects.all()
-    serializer_class = ExerciseSerializer
+class WorkoutPlanCreate(ListCreateAPIView):
+    queryset = WorkoutPlan.objects.all()
+    serializer_class = WorkoutPlanSerializer
     permission_classes = [IsAuthenticated]
     filter_backends = [
         filters.SearchFilter,
         filters.OrderingFilter,
         DjangoFilterBackend,
     ]
-    filterset_class = ExerciseFilter
+    filterset_class = WorkoutPlanFilter
 
     ordering_fields = "__all__"
     search_fields = [
         "name",
-        "muscle_group",
-        "instructions",
+        "day",
     ]
 
     def perform_create(self, serializer):
         instance = serializer.save(
-            created_by=self.request.user, updated_by=self.request.user
+            created_by=self.request.user,
+            updated_by=self.request.user,
+            profile=self.request.user.profile,
         )
 
     def list(self, request, *args, **kwargs):
@@ -77,10 +73,10 @@ class ExerciseCreate(ListCreateAPIView):
         return Response(serializer.data)
 
 
-class ExerciseList(ListAPIView):
-    serializer_class = ExerciseBasicSerializer
+class WorkoutPlanList(ListAPIView):
+    queryset = WorkoutPlan.objects.all()
+    serializer_class = WorkoutPlanBasicSerializer
     permission_classes = [IsAuthenticated]
-    filterset_class = ExerciseFilter
     filter_backends = [
         filters.SearchFilter,
         filters.OrderingFilter,
@@ -89,21 +85,19 @@ class ExerciseList(ListAPIView):
     filter_fields = "__all__"
     ordering_fields = "__all__"
     search_fields = [
-        "phone_no",
-        "address",
+        "name",
+        "day",
     ]
 
-    def get_queryset(self):
-        queryset = Exercise.objects.filter(
-            body_part="Chest", primary_muscle="Chest"
-        ).order_by("id")
-        print("queryset is ", queryset)
-        return queryset
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
 
 
-class ExerciseRetrieveUpdateDestroyAPI(RetrieveUpdateDestroyAPIView):
-    queryset = Exercise.objects.all()
-    serializer_class = ExerciseSerializer
+class WorkoutPlanRetrieveUpdateDestroyAPI(RetrieveUpdateDestroyAPIView):
+    queryset = WorkoutPlan.objects.all()
+    serializer_class = WorkoutPlanSerializer
     permission_classes = [IsAuthenticated]
 
     def perform_update(self, serializer):
@@ -115,3 +109,11 @@ class ExerciseRetrieveUpdateDestroyAPI(RetrieveUpdateDestroyAPIView):
         instance.updated_by = self.request.user
         instance.save()
         return instance
+
+
+class WorkoutExerciseAddView(APIView):
+    def post(self, request):
+        serilizer = WorkoutExerciseSerializer(data=request.data)
+        serilizer.is_valid(raise_exception=True)
+        serilizer.save()
+        return Response({"message": "ok"})
